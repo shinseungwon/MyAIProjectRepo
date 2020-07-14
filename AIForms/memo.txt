@@ -1,0 +1,6 @@
+﻿C:\Users\ssw90\source\repos\MyAIFramework\mnist
+
+C:\Users\ssw90\source\repos\MyAIFramework\mnist\train-images.idx3-ubyte
+C:\Users\ssw90\source\repos\MyAIFramework\mnist\batch-images.idx3-ubyte
+
+C:\Users\ssw90\source\repos\MyAIFramework\mnist\train-labels.idx1-ubyte

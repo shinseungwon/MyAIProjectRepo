@@ -1,0 +1,356 @@
+#include <iostream>
+#include <stdio.h>
+#include <vector>
+#include <random>
+#include <fstream>
+#include <time.h>
+#include <windows.h>
+
+#include "network.h"
+
+using namespace std;
+
+//prepare test data
+#define IMAGE_PATH "mnist\\train-images.idx3-ubyte"
+#define LABEL_PATH "mnist\\train-labels.idx1-ubyte"
+
+#define BIAS_WEIGHT_PATH "mnist\\biasweight.txt" //learned data
+
+#define IMAGE_HEADER_SIZE 16
+#define LABEL_HEADER_SIZE 8
+
+#define TOTAL_SIZE 1000 // <= 60000
+#define MINI_BATCH_SIZE 100 // <= TOTAL_IMG_SIZE
+
+#define INPUT_SIZE 784
+#define OUTPUT_SIZE 10
+//~prepare test data
+
+#define LEARN_COUNT 20
+#define LEARN_RATE 0.1
+
+void set_input_label();
+void read_input_label();
+void print_data(float* data, int size, bool dev = true);
+int get_answer(float* answer, int size);
+bool comp(float* result, float* answer, int size);
+
+//handwrite 
+vector<float*>* inputs;
+vector<int>* labels;
+vector<float*>* answers;
+//handwrite
+
+int* mbatch;
+
+HWND hwnd = CreateWindowEx(
+	0,                              // Optional window styles.
+	"MyAiPrinter",                     // Window class
+	"Learn to Program Windows",    // Window text
+	WS_OVERLAPPEDWINDOW,            // Window style
+
+	// Size and position
+	CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT, CW_USEDEFAULT,
+
+	NULL,       // Parent window    
+	NULL,       // Menu
+	NULL,		// Instance handle
+	NULL        // Additional application data
+);
+
+network* net1() {
+	network* net = new network();
+
+	net->add(new layer(layer_type::AFF, 1, 784, 784, 50));
+	net->add(new layer(layer_type::AFF, 1, 50, 50, 100));
+	net->add(new layer(layer_type::RESULT, 1, 100, 100, 10));
+
+	output* res = new output(10);
+	net->set_output(res);
+
+	return net;
+}
+
+network* net2() {
+	network* net = new network();	
+
+	net->add(new layer(layer_type::CONV, 28, 28, 5, 5));//input
+	net->add(new layer(layer_type::CONV, 24, 24, 5, 5));//conv1
+	net->add(new layer(layer_type::POOLING, 20, 20, 2, 2));//pool1
+	net->add(new layer(layer_type::RESULT, 1, 100, 100, 10));//result
+	net->layers->at(3)->isdropout = true;
+	net->layers->at(3)->dr = 0.3;
+
+	output* res = new output(10);
+	net->set_output(res);
+
+	return net;
+}
+
+network* net3() {
+	network* net = new network();
+
+	layer* input = new layer(layer_type::CONV, 28, 28, 3, 3);
+	net->add(input);
+	layer* conv1 = new layer(layer_type::CONV, 26, 26, 3, 3);
+	net->add(conv1);
+	layer* pool1 = new layer(layer_type::POOLING, 24, 24, 2, 2);
+	net->add(pool1);
+
+	layer* conv2 = new layer(layer_type::CONV, 12, 12, 3, 3);
+	net->add(conv2);
+	layer* conv3 = new layer(layer_type::CONV, 10, 10, 3, 3);
+	net->add(conv3);
+	layer* pool2 = new layer(layer_type::POOLING, 8, 8, 2, 2);
+	net->add(pool2);
+
+	layer* result = new layer(layer_type::RESULT, 1, 16, 16, 10);
+	net->add(result);
+
+	output* res = new output(10);
+	net->set_output(res);
+
+	return net;
+}
+
+network* net4() {
+	network* net = new network();
+	net->addaff(3, 12, false, true);
+	net->addaff(12, 8, true, true);	
+	output* res = new output(8);
+	net->set_output(res);
+
+	return net;
+}
+
+int main() 
+{
+	srand(static_cast<unsigned int>(time(NULL)));
+	read_input_label();
+	//set_input_label();
+	network* net = net2();
+	mbatch = mini_batch(TOTAL_SIZE, MINI_BATCH_SIZE);
+	int i, j, k, x, y;
+
+	//train
+	for (int x = 0; x < 20; x++) {
+		//for (i = 1; i < inputs->size(); i++) {
+		//	//printf("<<<<<<<<<<train item %d>>>>>>>>>>\n", i);
+		//	net->train(inputs->at(i), answers->at(i), false);
+		//}
+		for (i = 1; i < MINI_BATCH_SIZE; i++) {
+			//printf("<<<<<<<<<<train item %d>>>>>>>>>>\n", i);
+			net->train(inputs->at(mbatch[i]), answers->at(mbatch[i]), false);
+		}
+	}
+	//train
+
+	//test
+	int max_idx, correct = 0;
+	float max_val, tmp, acc;
+	
+	for (i = 0; i < inputs->size(); i++) {
+		float* result = net->predict(inputs->at(i));		
+		bool out = comp(result, answers->at(i), net->result->data_size);
+		int result_value = get_answer(result, net->result->data_size);
+		cout << "predict task " << i << " res " << result_value << " ans " << labels->at(i) << endl;
+
+		if (out) {
+			correct++;
+		}
+		else {
+			//print_data(inputs->at(i), 28, false);
+		}
+	}
+
+	acc = correct / (float)inputs->size();
+	cout << "accuracy : " << acc << endl;
+	//~test
+
+	return 0;
+}
+
+void set_input_label() {
+	inputs = new vector<float*>();
+	labels = new vector<int>();
+	answers = new vector<float*>();
+
+	inputs->push_back(new float[3]{ 0.001, 0.001, 0.001 });
+	inputs->push_back(new float[3]{ 0.001, 0.001, 1 });
+	inputs->push_back(new float[3]{ 0.001, 1, 0.001 });
+	inputs->push_back(new float[3]{ 0.001, 1, 1 });
+	inputs->push_back(new float[3]{ 1, 0.001, 0.001 });
+	inputs->push_back(new float[3]{ 1, 0.001, 1 });
+	inputs->push_back(new float[3]{ 1, 1, 0.001 });
+	inputs->push_back(new float[3]{ 1, 1, 1 });
+	
+	for (int i = 0; i < 8; i++) {
+		labels->push_back(i);
+		float* arr = new float[8];
+		memset(arr, 0, 8 * sizeof(float));
+		arr[i] = 1;
+		answers->push_back(arr);
+		printf("data %d ans %d input %f %f %f\n", i, i, inputs->at(i)[0], inputs->at(i)[1], inputs->at(i)[2]);
+	}	
+}
+
+void read_input_label() {
+	inputs = new vector<float*>();
+	labels = new vector<int>();
+	answers = new vector<float*>();
+
+	int header = 0, row = 0, col = 0, n, m, i = 0, j = 0, k = 0, l = 0, count = 0;
+
+	//read image
+	ifstream input_image(IMAGE_PATH, ios::binary);
+	vector<char> bytes_i;
+	char headerbuffer[IMAGE_HEADER_SIZE];
+	input_image.read(headerbuffer, IMAGE_HEADER_SIZE);
+	for (j = 0; j < IMAGE_HEADER_SIZE; j++) {
+		bytes_i.push_back(headerbuffer[j]);
+	}
+
+	for (j = 0; j < TOTAL_SIZE; j++) {
+		char* imagebuffer = new char[INPUT_SIZE];
+		input_image.read(imagebuffer, INPUT_SIZE);
+		for (k = 0; k < INPUT_SIZE; k++) {
+			bytes_i.push_back(imagebuffer[k]);
+		}
+	}
+
+	//read label
+	ifstream input_label(LABEL_PATH, ios::binary);
+	vector<char> bytes_l;
+	char labelbuffer[LABEL_HEADER_SIZE + TOTAL_SIZE];
+	input_label.read(labelbuffer, LABEL_HEADER_SIZE + TOTAL_SIZE);
+	for (j = 0; j < LABEL_HEADER_SIZE + TOTAL_SIZE; j++) {
+		bytes_l.push_back(labelbuffer[j]);
+	}
+
+	n = bytes_i.size();
+	m = bytes_l.size();
+
+	cout << "image header : ";
+	for (j = 0; j < IMAGE_HEADER_SIZE; j++) {
+		cout << (int)(unsigned char)bytes_i[i++] << ' ';
+	}
+	cout << endl;
+
+	cout << "label header : ";
+	for (j = 0; j < LABEL_HEADER_SIZE; j++) {
+		cout << (int)(unsigned char)bytes_l[l++] << ' ';
+	}
+	cout << endl;
+
+	float* img;
+	float* ans_arr;
+	int ans;
+	while (i < n && l < m && count < TOTAL_SIZE) {
+		ans = (int)(unsigned char)bytes_l[l++];
+		labels->push_back(ans);
+
+		ans_arr = new float[10];
+		memset(ans_arr, 0, 10 * sizeof(float));
+		ans_arr[ans] = 1;
+		answers->push_back(ans_arr);
+
+		img = new float[INPUT_SIZE];
+
+		for (j = 0; j < INPUT_SIZE; j++) {
+			img[j] = (float)(unsigned char)bytes_i[i++] / 256.0;
+		}
+
+		//put in host memory
+		inputs->push_back(img);
+
+		////put in device memory
+		//float* imgDev;
+		//cudaMalloc((void**)&imgDev, INPUT_SIZE * sizeof(float));
+		//cudaMemcpy(imgDev, img, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+		//images->push_back(imgDev);
+
+		count++;
+	}
+
+	cout << inputs->size() << " images" << endl;
+
+	input_image.close();
+	input_label.close();
+}
+
+void print_data(float* data, int width, bool dev) {
+	int i, j, stx, sty;
+	float pixel;
+	float* hst;
+	if (dev) {
+		hst = new float[width * width];
+		cpy_host(hst, data, width * width);
+	}
+	else {
+		hst = data;
+	}
+
+	HDC hdc = GetDC(hwnd);
+	for (int y = 0; y < width; y++) {
+		for (int x = 0; x < width; x++) {			
+			pixel = hst[y * 28 + x] * 256.0;
+			//SetPixel(hdc, x, y, RGB(pixel, pixel, pixel));
+			stx = 10 * x;
+			sty = 10 * y;
+			for (i = 0; i < 10; i++) {
+				for (j = 0; j < 10; j++) {
+					SetPixel(hdc, stx + j, sty + i, RGB(pixel, pixel, pixel));
+				}
+			}
+		}
+	}
+	UpdateWindow(hwnd);
+}
+
+int get_answer(float* answer, int size) {
+	int i;
+	int max_idx_a = -1;
+	float max_val_a = -1;
+
+	for (i = 0; i < size; i++) {		
+		if (answer[i] > max_val_a) {
+			max_val_a = answer[i];
+			max_idx_a = i;
+		}
+	}
+
+	return max_idx_a;
+}
+
+bool comp(float* result, float* answer, int size) {
+	int i;
+	int max_idx_r = -1, max_idx_a = -1;
+	float max_val_r = -1, max_val_a = -1;
+	
+	for (i = 0; i < size; i++) {
+		if (result[i] > max_val_r) {			
+			max_val_r = result[i];
+			max_idx_r = i;
+		}
+		if (answer[i] > max_val_a) {			
+			max_val_a = answer[i];
+			max_idx_a = i;
+		}
+	}
+
+	return max_idx_r == max_idx_a;	
+}
+
+
+
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+20200617
+
+		max = -1;
+		maxidx = -1;
+		for (j = 0; j < output_size; j++) {
+			if (res[j] > max) {
+				max = res[j];
+				maxidx = j;
+			}
+		}

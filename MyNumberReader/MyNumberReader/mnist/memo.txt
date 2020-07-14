@@ -1,0 +1,120 @@
+	////matrix test
+	//float a[12];// 4 x 3
+	//for (int i = 0; i < 12; i++) {
+	//	a[i] = i + 1;
+	//}
+
+	//float b[15];// 3 x 5
+	//for (int i = 0; i < 15; i++) {
+	//	b[i] = i + 1;
+	//}
+
+	//float c[20];
+
+	//float* adev;
+	//float* bdev;
+	//float* cdev;
+
+	//cudaMalloc((void**)&adev, 12 * sizeof(float));
+	//cudaMemcpy(adev, a, 12 * sizeof(float), cudaMemcpyHostToDevice);
+	//cudaMalloc((void**)&bdev, 15 * sizeof(float));
+	//cudaMemcpy(bdev, b, 15 * sizeof(float), cudaMemcpyHostToDevice);
+	//cudaMalloc((void**)&cdev, 20 * sizeof(float));
+
+	//matrix_multiplication << <4, 5 >> > (adev, 4, 3, bdev, 3, 5, cdev);
+	//cudaMemcpy(c, cdev, 20 * sizeof(float), cudaMemcpyDeviceToHost);
+	//cout << cudaGetErrorString(cudaGetLastError()) << endl;
+	//for (int i = 0; i < 20; i++) {
+	//	cout << c[i] << ' ';
+	//}
+	//cout << endl;
+	//return 0;
+	
+	//transpose test
+	float a[12];// 4 x 3
+	float at[12];
+	for (int i = 0; i < 12; i++) {
+		a[i] = i + 1;
+	}	
+
+	float* adev;
+	float* atdev;
+
+	cudaMalloc((void**)&adev, 12 * sizeof(float));
+	cudaMemcpy(adev, a, 12 * sizeof(float), cudaMemcpyHostToDevice);
+	cudaMalloc((void**)&atdev, 12 * sizeof(float));
+
+	matrix_transpose << <4, 3 >> > (adev, 4, 3, atdev);	
+	cout << cudaGetErrorString(cudaGetLastError()) << endl;
+	cudaMemcpy(at, atdev, 12 * sizeof(float), cudaMemcpyDeviceToHost);
+	for (int i = 0; i < 12; i++) {
+		cout << at[i] << ' ';		
+	}
+	cout << endl;
+	return 0;
+	
+	
+	
+	cudaMemcpy(levels[0], image, INPUT_SIZE * sizeof(float), cudaMemcpyHostToDevice);
+
+	matrix_multiplication << <1, ws_w_sz[0] >> > (levels[0], 1, INPUT_SIZE, wss_dev[0], ws_h_sz[0], ws_w_sz[0], levels[1]);
+	bias_sigmoid << <1, ws_w_sz[0] >> > (levels[1], bss_dev[0]);
+
+	matrix_multiplication << <1, ws_w_sz[1] >> > (levels[1], 1, ws_w_sz[0], wss_dev[1], ws_h_sz[1], ws_w_sz[1], levels[2]);
+	bias_sigmoid << <1, ws_w_sz[1] >> > (levels[2], bss_dev[1]);
+
+	matrix_multiplication << <1, ws_w_sz[2] >> > (levels[2], 1, ws_w_sz[1], wss_dev[2], ws_h_sz[2], ws_w_sz[2], levels[3]);
+	bias_sigmoid << <1, ws_w_sz[2] >> > (levels[3], bss_dev[2]);
+
+	softmax << <1, 1 >> > (levels[2], output_dev, ws_w_sz[2]);
+	cudaMemcpy(output, output_dev, ws_w_sz[2] * sizeof(float), cudaMemcpyDeviceToHost);
+	
+	
+	
+	predict(img, label);
+
+	output[label]--;
+	cudaMemcpy(swl, output, 10 * sizeof(float), cudaMemcpyHostToDevice);
+	output[label]++;
+
+	matrix_multiplication << <1, ws_h_sz[2] >> > (swl, 1, ws_w_sz[2], wsst[2], ws_w_sz[2], ws_h_sz[2], xssd[2]); //xssd[2] = 1 x 100
+	matrix_multiplication << <ws_w_sz[1], ws_w_sz[2] >> > (levels[2], ws_w_sz[1], 1, swl, 1, ws_w_sz[2], wssd[2]); // wssd[2] = 100 x 10
+	sigmoid_backward << <1, ws_w_sz[2] >> > (xssd[2], levels[2], 1, ws_w_sz[1]);
+
+	matrix_multiplication << <1, ws_h_sz[2] >> > (xssd[2], 1, ws_w_sz[1], wsst[1], ws_w_sz[1], ws_h_sz[1], xssd[1]); //xssd[1] = 1 x 50
+	matrix_multiplication << <1, ws_h_sz[2] >> > (levels[1], ws_w_sz[0], 1, xssd[2], 1, ws_w_sz[1], wssd[1]); //wssd[1] = 50 x 100
+	sigmoid_backward << <1, ws_w_sz[1] >> > (xssd[1], levels[1], 1, ws_w_sz[0]);
+
+	matrix_multiplication << <1, ws_h_sz[2] >> > (levels[0], ws_h_sz[0], 1, xssd[1], 1, ws_w_sz[0], wssd[0]); // wssd[0] = 784 x 50
+
+	for (j = 0; j < LEVEL_SIZE; j++) {
+		set_weight_changes << < ws_h_sz[j], ws_w_sz[j] >> > (wss_dev[j], wssd[j], ws_h_sz[j], ws_w_sz[j]);
+	}
+
+	set_bias_changes << <1, ws_w_sz[0] >> > (bss_dev[0], xssd[1], ws_w_sz[0]);
+	set_bias_changes << <1, ws_w_sz[1] >> > (bss_dev[1], xssd[2], ws_w_sz[1]);
+	set_bias_changes << <1, ws_w_sz[2] >> > (bss_dev[2], swl, ws_w_sz[2]);
+	
+	cout << cudaGetErrorString(cudaGetLastError()) << endl;
+	
+		cout << cudaGetErrorString(cudaGetLastError()) << endl;
+		print_matrix << <1, 1 >> > (wsst[1], 5000);
+	
+	
+layer 0 = 1 x 784
+w = 784 x 50
+
+layer 1 = 1 x 50
+w = 50 x 100
+
+layer 2 = 1 x 100
+w = 100 x 10
+
+layer 3 = 1 x 10
+
+bss = new float* [LEVEL_SIZE];
+bs_arr_sz = new int[LEVEL_SIZE] { 100, 200, 10 };
+
+wss = new float* [LEVEL_SIZE];
+ws_h_sz = new int[LEVEL_SIZE] { 784, 50, 100 };
+ws_w_sz = new int[LEVEL_SIZE] { 50, 100, 10 };

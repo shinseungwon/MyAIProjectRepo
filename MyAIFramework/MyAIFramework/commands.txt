@@ -1,0 +1,13 @@
+-ss C:\Users\ssw90\source\repos\MyAIFramework\mnist\spec.txt
+-si C:\Users\ssw90\source\repos\MyAIFramework\mnist\train-images.idx3-ubyte 16 784 60000
+-sa C:\Users\ssw90\source\repos\MyAIFramework\mnist\labels.idx1-ubyte 0 10 60000
+-t 20
+-ew C:\Users\ssw90\source\repos\MyAIFramework\mnist\weight-export.txt
+
+
+-p C:\Users\ssw90\source\repos\AIForms\bin\Debug\temp\predict.txt 0 784 1
+
+-p C:\Users\ssw90\source\repos\MyAIFramework\mnist\batch-images.idx3-ubyte 0 784 10
+-ew C:\Users\ssw90\source\repos\MyAIFramework\mnist\weight-export.txt
+
+-iw C:\Users\ssw90\source\repos\MyAIFramework\mnist\weight-export.txt

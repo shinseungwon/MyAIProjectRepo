@@ -1,0 +1,8 @@
+start batch : 1580026999
+convert done : 17s
+level 1 done 377s
+level 2 done 53s
+level 3 done 11s
+accuracy : 0.925183 done 1s
+start obo : 1580027458
+accuracy : 0.925183 461s
