@@ -207,7 +207,10 @@ void train(int count) {
 	for (int x = 0; x < count; x++) {
 		for (int i = 0; i < inputs->size(); i++) {
 			net->train(inputs->at(i), answers->at(i), false);			
-			cout << "item " << i << endl;
+			
+			if (i % 1000 == 0) {
+				cout << i << "items ..." << endl;
+			}			
 		}
 		cout << "rotation " << x << " ..." << endl;
 	}

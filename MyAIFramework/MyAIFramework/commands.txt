@@ -1,6 +1,6 @@
--ss C:\Users\ssw90\source\repos\MyAIFramework\mnist\spec.txt
--si C:\Users\ssw90\source\repos\MyAIFramework\mnist\train-images.idx3-ubyte 16 784 60000
--sa C:\Users\ssw90\source\repos\MyAIFramework\mnist\labels.idx1-ubyte 0 10 60000
+-ss C:\Users\ssw90\source\repos\MyAIProjectRepo\MyAIFramework\mnist\spec.txt
+-si C:\Users\ssw90\source\repos\MyAIProjectRepo\MyAIFramework\mnist\train-images.idx3-ubyte 16 784 60000
+-sa C:\Users\ssw90\source\repos\MyAIProjectRepo\MyAIFramework\mnist\labels.idx1-ubyte 0 10 60000
 -t 20
 -ew C:\Users\ssw90\source\repos\MyAIFramework\mnist\weight-export.txt
 

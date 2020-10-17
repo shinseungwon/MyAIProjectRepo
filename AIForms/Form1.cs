@@ -55,22 +55,22 @@ namespace AIForms
         private void Form1_Shown(object sender, EventArgs e)
         {
             //textbox_datapath.Text = @"C:\Users\ssw90\source\repos\MyAIFramework\mnist\batch-images.idx3-ubyte";
-            textbox_datapath.Text = @"C:\Users\ssw90\source\repos\MyAIFramework\mnist\train-images.idx3-ubyte";
+            textbox_datapath.Text = @"C:\Users\ssw90\source\repos\MyAIProjectRepo\MyAIFramework\mnist\train-images.idx3-ubyte";
             textbox_datalength.Text = "784";
             textbox_datawidth.Text = "28";
             textbox_dataoffset.Text = "16";
 
-            textbox_answerpath.Text = @"C:\Users\ssw90\source\repos\MyAIFramework\mnist\labels.idx1-ubyte";
+            textbox_answerpath.Text = @"C:\Users\ssw90\source\repos\MyAIProjectRepo\MyAIFramework\mnist\labels.idx1-ubyte";
             textbox_answerlength.Text = "10";
             textbox_answerwidth.Text = "10";
             textbox_answeroffset.Text = "0";
 
-            textbox_networkpath.Text = @"C:\Users\ssw90\source\repos\MyAIFramework\mnist\spec.txt";
-            textbox_biasweightpath.Text = @"C:\Users\ssw90\source\repos\MyAIFramework\mnist\weight-export.txt";
+            textbox_networkpath.Text = @"C:\Users\ssw90\source\repos\MyAIProjectRepo\MyAIFramework\mnist\spec.txt";
+            textbox_biasweightpath.Text = @"C:\Users\ssw90\source\repos\MyAIProjectRepo\MyAIFramework\mnist\weight-export.txt";
 
-            textbox_exepath.Text = @"C:\Users\ssw90\source\repos\MyAIFramework\x64\Debug\MyAIFramework.exe";
+            textbox_exepath.Text = @"C:\Users\ssw90\source\repos\MyAIProjectRepo\MyAIFramework\x64\Debug\MyAIFramework.exe";
 
-            textbox_exportpath.Text = @"C:\Users\ssw90\source\repos\MyAIFramework\mnist\weight-export-4";
+            textbox_exportpath.Text = @"C:\Users\ssw90\source\repos\MyAIProjectRepo\MyAIFramework\mnist\weight-export-4";
 
             textbox_testcount.Text = "100";
 
